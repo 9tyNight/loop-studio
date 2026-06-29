@@ -1,0 +1,22 @@
+{
+  "name": "loop-studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A modern dashboard for pricing AI automation loops for local businesses.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.0"
+  },
+  "dependencies": {
+    "lucide-react": "^1.22.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  }
+}
