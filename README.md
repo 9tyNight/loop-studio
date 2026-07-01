@@ -4,6 +4,8 @@ A modern React dashboard for pricing AI automation loops for local businesses. T
 
 **Live demo:** [https://loop-studio-one.vercel.app](https://loop-studio-one.vercel.app)
 
+Loop Studio packages AI automation work into concrete business loops: review response, no-show recovery, quote drafting, bookkeeping cleanup, and content repurposing.
+
 ![Desktop screenshot](public/screenshots/desktop.png)
 
 ## Problem It Solves
