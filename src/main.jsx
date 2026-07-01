@@ -354,6 +354,9 @@ function App() {
         <header className="topbar">
           <div>
             <h1>Loop Studio</h1>
+            <span className="prototype-label">
+              Interactive pricing prototype for AI automation consultants
+            </span>
             <p>Price AI automation packages against the software and labor they replace.</p>
           </div>
           <label className="command-bar">

@@ -147,6 +147,14 @@ h1 {
   font-weight: 780;
 }
 
+.prototype-label {
+  display: inline-flex;
+  margin-top: 8px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .topbar p,
 .panel-heading p {
   color: var(--muted);
