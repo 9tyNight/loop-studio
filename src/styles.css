@@ -168,6 +168,20 @@ h1 {
   font-size: 13px;
 }
 
+.command-bar input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: 13px;
+}
+
+.command-bar input::placeholder {
+  color: #8a949d;
+}
+
 .command-bar kbd {
   margin-left: auto;
   padding: 4px 7px;
@@ -299,6 +313,20 @@ h2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  min-height: 104px;
+  padding: 22px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.68);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 13px;
 }
 
 .loop-card {
@@ -739,6 +767,26 @@ input[type="range"] {
   background: linear-gradient(180deg, #ffffff 0%, #f7fcfa 100%);
 }
 
+.spotlight {
+  animation: spotlight 1300ms ease;
+}
+
+@keyframes spotlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 169, 199, 0);
+    border-color: var(--border);
+  }
+
+  22% {
+    box-shadow: 0 0 0 4px rgba(0, 169, 199, 0.16);
+    border-color: rgba(0, 169, 199, 0.72);
+  }
+
+  100% {
+    box-shadow: none;
+  }
+}
+
 .generated-proposal pre {
   max-height: 320px;
   overflow: auto;
@@ -760,6 +808,116 @@ input[type="range"] {
   background: var(--green);
 }
 
+.utility-panel {
+  min-height: 680px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow);
+}
+
+.utility-panel > p {
+  max-width: 720px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.library-card,
+.scenario-card {
+  min-height: 162px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfc;
+  text-align: left;
+}
+
+.library-card {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.library-card strong,
+.scenario-card strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.library-card span,
+.scenario-card span {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.library-card p,
+.scenario-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.scenario-card {
+  cursor: pointer;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.scenario-card.selected {
+  border-color: rgba(10, 122, 91, 0.4);
+  background: var(--green-2);
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.settings-list {
+  max-width: 720px;
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.settings-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-list div:last-child {
+  border-bottom: 0;
+}
+
+.settings-list span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.settings-list strong {
+  color: var(--ink);
+  font-size: 13px;
+  text-align: right;
+}
+
 @media (max-width: 1180px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -774,6 +932,11 @@ input[type="range"] {
   }
 
   .workflow-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .library-grid,
+  .report-grid {
     grid-template-columns: 1fr;
   }
 

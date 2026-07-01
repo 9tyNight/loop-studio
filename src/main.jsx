@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowUpRight,
@@ -175,14 +175,17 @@ const savedScenarios = [
 ];
 
 const navItems = [
-  { label: "Price", icon: Gauge, active: true },
-  { label: "Loops", icon: Layers3 },
-  { label: "Clients", icon: Building2 },
-  { label: "Reports", icon: BarChart3 },
-  { label: "Settings", icon: Settings2 },
+  { id: "price", label: "Price", icon: Gauge },
+  { id: "loops", label: "Loops", icon: Layers3 },
+  { id: "clients", label: "Clients", icon: Building2 },
+  { id: "reports", label: "Reports", icon: BarChart3 },
+  { id: "settings", label: "Settings", icon: Settings2 },
 ];
 
 function App() {
+  const promptCardRef = useRef(null);
+  const proposalRef = useRef(null);
+  const [activeSection, setActiveSection] = useState("price");
   const [business, setBusiness] = useState("Dental");
   const [selected, setSelected] = useState(
     businessProfiles.Dental.defaultLoops,
@@ -192,9 +195,18 @@ function App() {
   const [privacyBox, setPrivacyBox] = useState(true);
   const [activeScenario, setActiveScenario] = useState("Austin Dental");
   const [generatedProposal, setGeneratedProposal] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [promptHighlighted, setPromptHighlighted] = useState(false);
+  const [proposalHighlighted, setProposalHighlighted] = useState(false);
+  const [copyStatus, setCopyStatus] = useState("");
 
   const activeLoops = loopCatalog.filter((loop) => selected.includes(loop.id));
   const primaryLoop = activeLoops[0] ?? loopCatalog[0];
+  const filteredLoops = loopCatalog.filter((loop) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return `${loop.name} ${loop.summary} ${loop.metric}`.toLowerCase().includes(query);
+  });
 
   const totals = useMemo(() => {
     const software = activeLoops.reduce((sum, loop) => sum + loop.price, 0);
@@ -240,6 +252,7 @@ function App() {
   };
 
   const applyScenario = (scenario) => {
+    setActiveSection("price");
     setBusiness(scenario.business);
     setSelected(scenario.loops);
     setLaborRate(scenario.laborRate);
@@ -249,15 +262,61 @@ function App() {
     setGeneratedProposal("");
   };
 
-  const exportProposal = () => {
-    setGeneratedProposal(
-      buildProposal({
-        activeLoops,
-        businessLabel: businessProfiles[business].label,
-        privacyBox,
-        totals,
-      }),
-    );
+  const jumpToPromptPack = () => {
+    setActiveSection("price");
+    setPromptHighlighted(true);
+    setTimeout(() => {
+      promptCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    window.setTimeout(() => setPromptHighlighted(false), 1400);
+  };
+
+  const copyProposal = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus("Copied proposal to clipboard");
+    } catch {
+      setCopyStatus("Proposal generated below");
+    }
+    window.setTimeout(() => setCopyStatus(""), 2200);
+  };
+
+  const exportProposal = async () => {
+    const proposalText = buildProposal({
+      activeLoops,
+      businessLabel: businessProfiles[business].label,
+      privacyBox,
+      totals,
+    });
+    setActiveSection("price");
+    setGeneratedProposal(proposalText);
+    setProposalHighlighted(true);
+    await copyProposal(proposalText);
+    setTimeout(() => {
+      proposalRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    window.setTimeout(() => setProposalHighlighted(false), 1400);
+  };
+
+  const openProposal = () => {
+    if (!generatedProposal) {
+      void exportProposal();
+      return;
+    }
+    setProposalHighlighted(true);
+    proposalRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => setProposalHighlighted(false), 1400);
+  };
+
+  const runDemo = () => {
+    applyScenario(savedScenarios[1]);
+    setSearchQuery("");
+    setTimeout(() => {
+      document.querySelector(".workflow-panel")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 80);
   };
 
   return (
@@ -269,11 +328,12 @@ function App() {
         <nav className="nav-stack">
           {navItems.map((item) => (
             <button
-              className={`icon-button ${item.active ? "active" : ""}`}
+              className={`icon-button ${activeSection === item.id ? "active" : ""}`}
               type="button"
               key={item.label}
               aria-label={item.label}
               title={item.label}
+              onClick={() => setActiveSection(item.id)}
             >
               <item.icon size={19} />
             </button>
@@ -284,6 +344,7 @@ function App() {
           type="button"
           aria-label="Run demo"
           title="Run demo"
+          onClick={runDemo}
         >
           <Play size={18} />
         </button>
@@ -295,13 +356,23 @@ function App() {
             <h1>Loop Studio</h1>
             <p>Price AI automation packages against the software and labor they replace.</p>
           </div>
-          <div className="command-bar">
+          <label className="command-bar">
             <Search size={17} />
-            <span>Find loop, metric, or client</span>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setActiveSection("price");
+              }}
+              placeholder="Find loop, metric, or client"
+              aria-label="Find loop, metric, or client"
+            />
             <kbd>Ctrl K</kbd>
-          </div>
+          </label>
         </header>
 
+        {activeSection === "price" ? (
         <div className="content-grid">
           <section className="pricing-panel" aria-label="Package pricing workspace">
             <div className="panel-heading">
@@ -309,7 +380,7 @@ function App() {
                 <h2>Price a package</h2>
                 <p>{businessProfiles[business].baseline}</p>
               </div>
-              <button className="secondary-button" type="button">
+              <button className="secondary-button" type="button" onClick={jumpToPromptPack}>
                 <Wand2 size={16} />
                 Draft prompts
               </button>
@@ -343,7 +414,7 @@ function App() {
             </div>
 
             <div className="loop-grid">
-              {loopCatalog.map((loop) => {
+              {filteredLoops.map((loop) => {
                 const Icon = loop.icon;
                 const isSelected = selected.includes(loop.id);
                 return (
@@ -370,6 +441,11 @@ function App() {
                   </button>
                 );
               })}
+              {filteredLoops.length === 0 && (
+                <div className="empty-state">
+                  No loops match "{searchQuery}". Try review, quote, content, no-show, or bookkeeping.
+                </div>
+              )}
             </div>
 
             <div className="calculator-grid">
@@ -463,6 +539,7 @@ function App() {
                 type="button"
                 aria-label="Open proposal"
                 title="Open proposal"
+                onClick={openProposal}
               >
                 <ArrowUpRight size={17} />
               </button>
@@ -517,7 +594,10 @@ function App() {
               </p>
             </div>
 
-            <div className="prompt-card">
+            <div
+              className={`prompt-card ${promptHighlighted ? "spotlight" : ""}`}
+              ref={promptCardRef}
+            >
               <div>
                 <Copy size={17} />
                 <span>Prompt pack preview</span>
@@ -526,7 +606,11 @@ function App() {
             </div>
 
             {generatedProposal && (
-              <div className="generated-proposal" aria-live="polite">
+              <div
+                className={`generated-proposal ${proposalHighlighted ? "spotlight" : ""}`}
+                aria-live="polite"
+                ref={proposalRef}
+              >
                 <div>
                   <FileText size={17} />
                   <span>Generated proposal text</span>
@@ -537,13 +621,104 @@ function App() {
 
             <button className="primary-button" type="button" onClick={exportProposal}>
               <FileText size={17} />
-              {generatedProposal ? "Regenerate proposal" : "Export proposal"}
+              {copyStatus || (generatedProposal ? "Regenerate and copy" : "Export and copy")}
               <Send size={16} />
             </button>
           </aside>
         </div>
+        ) : (
+          <SectionPanel
+            activeSection={activeSection}
+            activeLoops={activeLoops}
+            activeScenario={activeScenario}
+            applyScenario={applyScenario}
+            setActiveSection={setActiveSection}
+            totals={totals}
+          />
+        )}
       </section>
     </main>
+  );
+}
+
+function SectionPanel({
+  activeSection,
+  activeLoops,
+  activeScenario,
+  applyScenario,
+  setActiveSection,
+  totals,
+}) {
+  if (activeSection === "loops") {
+    return (
+      <section className="utility-panel">
+        <h2>Loop library</h2>
+        <p>Review each automation loop, its trigger, prompt, and approval boundary.</p>
+        <div className="library-grid">
+          {loopCatalog.map((loop) => (
+            <article className="library-card" key={loop.id}>
+              <strong>{loop.name}</strong>
+              <span>{loop.trigger}</span>
+              <p>{loop.prompt}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (activeSection === "clients") {
+    return (
+      <section className="utility-panel">
+        <h2>Saved client scenarios</h2>
+        <p>Load a scenario to update loops, pricing assumptions, and proposal context.</p>
+        <div className="library-grid">
+          {savedScenarios.map((scenario) => (
+            <button
+              className={`scenario-card ${activeScenario === scenario.name ? "selected" : ""}`}
+              key={scenario.name}
+              type="button"
+              onClick={() => applyScenario(scenario)}
+            >
+              <strong>{scenario.name}</strong>
+              <span>{businessProfiles[scenario.business].label}</span>
+              <small>{scenario.loops.length} loops, {currency.format(scenario.laborRate)}/hour labor value</small>
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (activeSection === "reports") {
+    return (
+      <section className="utility-panel">
+        <h2>ROI breakdown</h2>
+        <p>Current package economics based on selected loops and pricing assumptions.</p>
+        <div className="report-grid">
+          <Stat label="Value replaced" value={currency.format(totals.value)} />
+          <Stat label="Monthly retainer" value={currency.format(totals.monthly)} highlight />
+          <Stat label="Monthly savings" value={currency.format(totals.savings)} />
+          <Stat label="Labor returned" value={`${totals.hours}h/mo`} />
+        </div>
+        <button className="secondary-button" type="button" onClick={() => setActiveSection("price")}>
+          Back to pricing workspace
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="utility-panel">
+      <h2>System settings</h2>
+      <p>Routing and approval defaults for the selected package.</p>
+      <div className="settings-list">
+        <div><span>Cloud model</span><strong>Claude Sonnet</strong></div>
+        <div><span>Local triage</span><strong>Enabled for sensitive packages</strong></div>
+        <div><span>Human approval</span><strong>Required for low confidence or risky outputs</strong></div>
+        <div><span>Selected loops</span><strong>{activeLoops.length}</strong></div>
+      </div>
+    </section>
   );
 }
 
