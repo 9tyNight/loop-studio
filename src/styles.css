@@ -770,6 +770,29 @@ input[type="range"] {
   font-size: 12px;
 }
 
+.prompt-list {
+  display: grid;
+  gap: 8px;
+}
+
+.prompt-preview {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+
+.prompt-preview strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.prompt-preview p {
+  margin: 0;
+}
+
 .generated-proposal {
   border-color: rgba(10, 122, 91, 0.3);
   background: linear-gradient(180deg, #ffffff 0%, #f7fcfa 100%);

@@ -200,7 +200,9 @@ function App() {
   const [proposalHighlighted, setProposalHighlighted] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
 
-  const activeLoops = loopCatalog.filter((loop) => selected.includes(loop.id));
+  const activeLoops = selected
+    .map((id) => loopCatalog.find((loop) => loop.id === id))
+    .filter(Boolean);
   const primaryLoop = activeLoops[0] ?? loopCatalog[0];
   const filteredLoops = loopCatalog.filter((loop) => {
     const query = searchQuery.trim().toLowerCase();
@@ -605,7 +607,14 @@ function App() {
                 <Copy size={17} />
                 <span>Prompt pack preview</span>
               </div>
-              <p>{primaryLoop.prompt}</p>
+              <div className="prompt-list">
+                {activeLoops.map((loop) => (
+                  <article className="prompt-preview" key={loop.id}>
+                    <strong>{loop.name}</strong>
+                    <p>{loop.prompt}</p>
+                  </article>
+                ))}
+              </div>
             </div>
 
             {generatedProposal && (
