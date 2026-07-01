@@ -256,6 +256,45 @@ h2 {
   box-shadow: 0 8px 22px rgba(24, 40, 48, 0.08);
 }
 
+.scenario-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.scenario-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.scenario-strip span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.scenario-strip button {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #56636e;
+  background: rgba(255, 255, 255, 0.84);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.scenario-strip button.selected {
+  color: var(--green);
+  border-color: rgba(10, 122, 91, 0.34);
+  background: var(--green-2);
+}
+
 .loop-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -362,6 +401,92 @@ h2 {
   grid-template-columns: minmax(0, 1fr) 310px;
   gap: 12px;
   margin-top: 12px;
+}
+
+.workflow-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(0, 169, 199, 0.08), transparent 42%),
+    #fbfcfc;
+}
+
+.workflow-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.workflow-heading p {
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.workflow-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--green);
+  background: var(--green-2);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workflow-step {
+  position: relative;
+  min-height: 116px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+}
+
+.workflow-step::after {
+  content: "";
+  position: absolute;
+  top: 24px;
+  right: -8px;
+  width: 8px;
+  height: 1px;
+  background: var(--border);
+}
+
+.workflow-step:last-child::after {
+  display: none;
+}
+
+.workflow-step span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.workflow-step p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.workflow-step.active {
+  border-color: rgba(0, 169, 199, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(0, 169, 199, 0.08);
 }
 
 .control-panel,
@@ -562,7 +687,9 @@ input[type="range"] {
 }
 
 .stack-card,
-.math-card {
+.math-card,
+.prompt-card,
+.generated-proposal {
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -575,7 +702,9 @@ input[type="range"] {
 }
 
 .stack-heading,
-.math-card div {
+.math-card div,
+.prompt-card div,
+.generated-proposal div {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -588,13 +717,41 @@ input[type="range"] {
   border-top: 1px solid var(--line);
 }
 
-.math-card {
+.math-card,
+.prompt-card,
+.generated-proposal {
   display: grid;
   gap: 9px;
 }
 
-.math-card p {
+.math-card p,
+.prompt-card p {
   line-height: 1.55;
+}
+
+.prompt-card p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.generated-proposal {
+  border-color: rgba(10, 122, 91, 0.3);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fcfa 100%);
+}
+
+.generated-proposal pre {
+  max-height: 320px;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #233039;
+  background: #f8faf9;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 .primary-button {
@@ -614,6 +771,23 @@ input[type="range"] {
 
   .calculator-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workflow-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-step {
+    min-height: auto;
+  }
+
+  .workflow-step::after {
+    top: auto;
+    right: auto;
+    bottom: -8px;
+    left: 22px;
+    width: 1px;
+    height: 8px;
   }
 }
 
@@ -668,6 +842,12 @@ input[type="range"] {
 
   .business-tabs {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .scenario-strip {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
 
   .loop-grid {

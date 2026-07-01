@@ -6,8 +6,8 @@ import {
   Bot,
   Building2,
   Check,
-  ChevronDown,
   ClipboardList,
+  Copy,
   DollarSign,
   FileText,
   Gauge,
@@ -20,6 +20,7 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Send,
   TimerReset,
   Wand2,
 } from "lucide-react";
@@ -70,6 +71,11 @@ const loopCatalog = [
     color: "green",
     summary:
       "Triage reviews locally, draft on-brand replies, and route sensitive reviews for owner approval.",
+    trigger: "New public review arrives",
+    classify: "Detect rating, tone, refund risk, and human-review flags",
+    draft: "Write a reply in the owner's voice with the exact detail mentioned",
+    prompt:
+      "Write a public review reply under 60 words. Thank the customer by first name, reference the specific detail they mentioned, match the owner's voice, and flag negative reviews for approval.",
   },
   {
     id: "no-show",
@@ -82,6 +88,11 @@ const loopCatalog = [
     color: "cyan",
     summary:
       "Classify reminder replies, refill cancellations from the waitlist, and protect high-value appointments.",
+    trigger: "Reminder reply or cancellation lands",
+    classify: "Classify confirm, cancel, reschedule, question, or urgent issue",
+    draft: "Draft the waitlist fill message and warm rebooking note",
+    prompt:
+      "A paid appointment slot just opened. Write a short SMS to the next waitlisted client with urgency but no pressure, then write a warm rebooking note for the client who cancelled.",
   },
   {
     id: "quote",
@@ -94,6 +105,11 @@ const loopCatalog = [
     color: "orange",
     summary:
       "Extract scope, apply a rate card, draft a line-item quote, and flag ambiguous work for review.",
+    trigger: "New quote request arrives",
+    classify: "Extract scope, unknowns, location, urgency, and rate-card matches",
+    draft: "Build a first-pass line-item estimate with owner-input flags",
+    prompt:
+      "Extract billable line items from this inquiry, price only from the rate card, list anything ambiguous under needs_owner_input, and write a confident cover note.",
   },
   {
     id: "bookkeeping",
@@ -106,6 +122,11 @@ const loopCatalog = [
     color: "green",
     summary:
       "Extract transaction details, categorize against a chart of accounts, and queue risky entries for signoff.",
+    trigger: "Receipt or transaction appears",
+    classify: "Extract vendor, amount, date, category fit, duplicate risk, and threshold flags",
+    draft: "Suggest account code and a plain-English monthly note",
+    prompt:
+      "Code this transaction against the chart of accounts. Return account, confidence, duplicate or large-transaction flag, and a short note for the approval queue.",
   },
   {
     id: "content",
@@ -118,6 +139,38 @@ const loopCatalog = [
     color: "cyan",
     summary:
       "Turn one source asset into platform-native posts while preserving voice and measuring engagement.",
+    trigger: "Source asset drops into the content folder",
+    classify: "Identify strongest idea, audience angle, and usable clips or sections",
+    draft: "Fan out into X, LinkedIn, newsletter, YouTube, and Instagram copy",
+    prompt:
+      "Reshape this source asset into one native platform post. Lead with the strongest idea, keep the brand voice, avoid hashtag stuffing, and output only the post text.",
+  },
+];
+
+const savedScenarios = [
+  {
+    name: "Austin Dental",
+    business: "Dental",
+    loops: ["no-show", "review"],
+    laborRate: 85,
+    margin: 32,
+    privacyBox: true,
+  },
+  {
+    name: "Remodel Quote Desk",
+    business: "Contractor",
+    loops: ["quote", "review", "content"],
+    laborRate: 95,
+    margin: 34,
+    privacyBox: false,
+  },
+  {
+    name: "Bookkeeping Cleanup",
+    business: "Accountant",
+    loops: ["bookkeeping", "quote"],
+    laborRate: 100,
+    margin: 36,
+    privacyBox: true,
   },
 ];
 
@@ -137,8 +190,11 @@ function App() {
   const [laborRate, setLaborRate] = useState(businessProfiles.Dental.rate);
   const [margin, setMargin] = useState(32);
   const [privacyBox, setPrivacyBox] = useState(true);
+  const [activeScenario, setActiveScenario] = useState("Austin Dental");
+  const [generatedProposal, setGeneratedProposal] = useState("");
 
   const activeLoops = loopCatalog.filter((loop) => selected.includes(loop.id));
+  const primaryLoop = activeLoops[0] ?? loopCatalog[0];
 
   const totals = useMemo(() => {
     const software = activeLoops.reduce((sum, loop) => sum + loop.price, 0);
@@ -164,6 +220,7 @@ function App() {
   }, [activeLoops, laborRate, margin, privacyBox]);
 
   const toggleLoop = (id) => {
+    setActiveScenario("Custom package");
     setSelected((current) => {
       if (current.includes(id)) {
         return current.length === 1
@@ -179,6 +236,28 @@ function App() {
     setLaborRate(businessProfiles[key].rate);
     setSelected(businessProfiles[key].defaultLoops);
     setPrivacyBox(key === "Dental" || key === "Accountant");
+    setActiveScenario("Custom package");
+  };
+
+  const applyScenario = (scenario) => {
+    setBusiness(scenario.business);
+    setSelected(scenario.loops);
+    setLaborRate(scenario.laborRate);
+    setMargin(scenario.margin);
+    setPrivacyBox(scenario.privacyBox);
+    setActiveScenario(scenario.name);
+    setGeneratedProposal("");
+  };
+
+  const exportProposal = () => {
+    setGeneratedProposal(
+      buildProposal({
+        activeLoops,
+        businessLabel: businessProfiles[business].label,
+        privacyBox,
+        totals,
+      }),
+    );
   };
 
   return (
@@ -249,6 +328,20 @@ function App() {
               ))}
             </div>
 
+            <div className="scenario-strip" aria-label="Saved client scenarios">
+              <span>Saved scenarios</span>
+              {savedScenarios.map((scenario) => (
+                <button
+                  key={scenario.name}
+                  type="button"
+                  className={activeScenario === scenario.name ? "selected" : ""}
+                  onClick={() => applyScenario(scenario)}
+                >
+                  {scenario.name}
+                </button>
+              ))}
+            </div>
+
             <div className="loop-grid">
               {loopCatalog.map((loop) => {
                 const Icon = loop.icon;
@@ -292,7 +385,10 @@ function App() {
                     min="50"
                     max="130"
                     value={laborRate}
-                    onChange={(event) => setLaborRate(Number(event.target.value))}
+                    onChange={(event) => {
+                      setLaborRate(Number(event.target.value));
+                      setActiveScenario("Custom package");
+                    }}
                   />
                 </div>
                 <div className="control-row">
@@ -306,14 +402,20 @@ function App() {
                     min="25"
                     max="40"
                     value={margin}
-                    onChange={(event) => setMargin(Number(event.target.value))}
+                    onChange={(event) => {
+                      setMargin(Number(event.target.value));
+                      setActiveScenario("Custom package");
+                    }}
                   />
                 </div>
                 <label className="toggle-line">
                   <input
                     type="checkbox"
                     checked={privacyBox}
-                    onChange={(event) => setPrivacyBox(event.target.checked)}
+                    onChange={(event) => {
+                      setPrivacyBox(event.target.checked);
+                      setActiveScenario("Custom package");
+                    }}
                   />
                   <span>
                     <ShieldCheck size={17} />
@@ -328,6 +430,26 @@ function App() {
                 <Stat label="Monthly retainer" value={currency.format(totals.monthly)} highlight />
               </div>
             </div>
+
+            <section className="workflow-panel" aria-label="AI loop workflow">
+              <div className="workflow-heading">
+                <div>
+                  <h2>AI loop workflow</h2>
+                  <p>{primaryLoop.name}: trigger to approved action</p>
+                </div>
+                <span className="workflow-status">
+                  <Sparkles size={14} />
+                  Simulated run
+                </span>
+              </div>
+              <div className="workflow-steps">
+                <WorkflowStep label="Trigger" text={primaryLoop.trigger} active />
+                <WorkflowStep label="Classify" text={primaryLoop.classify} />
+                <WorkflowStep label="Draft" text={primaryLoop.draft} />
+                <WorkflowStep label="Approve" text="Queue risky outputs for owner signoff" />
+                <WorkflowStep label="Send" text="Post, text, email, or save the approved action" />
+              </div>
+            </section>
           </section>
 
           <aside className="proposal-panel" aria-label="Proposal preview">
@@ -395,15 +517,42 @@ function App() {
               </p>
             </div>
 
-            <button className="primary-button" type="button">
+            <div className="prompt-card">
+              <div>
+                <Copy size={17} />
+                <span>Prompt pack preview</span>
+              </div>
+              <p>{primaryLoop.prompt}</p>
+            </div>
+
+            {generatedProposal && (
+              <div className="generated-proposal" aria-live="polite">
+                <div>
+                  <FileText size={17} />
+                  <span>Generated proposal text</span>
+                </div>
+                <pre>{generatedProposal}</pre>
+              </div>
+            )}
+
+            <button className="primary-button" type="button" onClick={exportProposal}>
               <FileText size={17} />
-              Export proposal
-              <ChevronDown size={16} />
+              {generatedProposal ? "Regenerate proposal" : "Export proposal"}
+              <Send size={16} />
             </button>
           </aside>
         </div>
       </section>
     </main>
+  );
+}
+
+function WorkflowStep({ label, text, active = false }) {
+  return (
+    <div className={`workflow-step ${active ? "active" : ""}`}>
+      <span>{label}</span>
+      <p>{text}</p>
+    </div>
   );
 }
 
@@ -422,6 +571,38 @@ function GaugeMeter({ value }) {
       <span style={{ width: `${value}%` }} />
     </div>
   );
+}
+
+function buildProposal({ activeLoops, businessLabel, privacyBox, totals }) {
+  const loopNames = activeLoops.map((loop) => loop.name).join(", ");
+  const outcomes = activeLoops
+    .map((loop) => `- ${loop.name}: ${loop.summary}`)
+    .join("\n");
+
+  return `AI Automation Loop Proposal
+
+Client type: ${businessLabel}
+Selected loops: ${loopNames}
+
+Recommended package:
+- Setup fee: ${currency.format(totals.setup)}
+- Monthly retainer: ${currency.format(totals.monthly)}
+- Estimated value replaced: ${currency.format(totals.value)} per month
+- Estimated net monthly savings: ${currency.format(totals.savings)}
+
+What this replaces:
+${outcomes}
+
+Operating model:
+- Trigger: each loop starts from a real business event.
+- Classify: the system decides whether the action is safe to automate.
+- Draft: Claude-style prompts create the reply, quote, note, or content asset.
+- Approve: sensitive or low-confidence outputs wait for human review.
+- Send: approved actions are posted, messaged, emailed, or queued.
+
+Privacy posture: ${privacyBox ? "on-prem triage recommended for sensitive data." : "cloud-first routing is acceptable for this package."}
+
+Next step: confirm integrations, collect voice/rate-card examples, and run a 7-day pilot before enabling broader automation.`;
 }
 
 createRoot(document.getElementById("app")).render(<App />);
